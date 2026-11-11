@@ -7,6 +7,7 @@ from exposureguard.domain.models import Severity, Target
 from exposureguard.engine.base import ScanContext
 from exposureguard.engine.runner import run_scan
 from exposureguard.scope import ScopeError
+from exposureguard.networking.resolution import ResolvedTarget
 
 
 async def _listen():
@@ -35,3 +36,17 @@ async def test_open_risky_port_is_reported(scope, monkeypatch):
 async def test_closed_port_gives_no_findings(scope):
     result = await run_scan([Target(host="127.0.0.1", ports=[1])], scope, ScanContext(timeout=0.5))
     assert result.findings == [] and result.grade == "A"
+
+
+async def test_dns_preflight_rejects_explicitly_denied_answer(scope, monkeypatch):
+    from exposureguard.engine import runner
+
+    scope.allowed = ["*.lab.example.com"]
+    scope.denied = ["203.0.113.9"]
+
+    async def fake_resolve(host, timeout):
+        return ResolvedTarget(host=host, addresses=("203.0.113.9",))
+
+    monkeypatch.setattr(runner, "resolve_target", fake_resolve)
+    with pytest.raises(ScopeError, match="resolved address explicitly denied"):
+        await run_scan([Target(host="gateway.lab.example.com", ports=[443])], scope)
