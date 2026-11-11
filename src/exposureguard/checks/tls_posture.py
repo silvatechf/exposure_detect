@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 import ssl
 
 from exposureguard.domain.models import Finding, Severity, Target
 from exposureguard.engine.base import Check, ScanContext
 from exposureguard.engine.registry import register
+from exposureguard.networking.resolution import ResolvedTarget, open_pinned_connection
 
 
 def _legacy_context() -> ssl.SSLContext | None:
@@ -22,10 +22,8 @@ def _legacy_context() -> ssl.SSLContext | None:
         return None  # this OpenSSL build cannot speak legacy TLS: nothing to probe
 
 
-async def _handshake(host: str, port: int, ctx: ssl.SSLContext, timeout: float) -> None:
-    _, writer = await asyncio.wait_for(
-        asyncio.open_connection(host, port, ssl=ctx, server_hostname=host), timeout
-    )
+async def _handshake(target: ResolvedTarget, port: int, ctx: ssl.SSLContext, timeout: float) -> None:
+    _, writer = await open_pinned_connection(target, port, timeout, ssl_context=ctx)
     writer.close()
     try:
         await writer.wait_closed()
@@ -41,9 +39,10 @@ class TlsPostureCheck(Check):
     async def run(self, target: Target, ctx: ScanContext) -> list[Finding]:
         ports = sorted(ctx.open_ports.get(target.host, set()) & ctx.https_ports)
         findings: list[Finding] = []
+        resolved = ctx.resolved_targets[target.host]
         for port in ports:
             try:
-                await _handshake(target.host, port, ssl.create_default_context(), ctx.timeout)
+                await _handshake(resolved, port, ssl.create_default_context(), ctx.timeout)
             except ssl.SSLCertVerificationError as exc:
                 findings.append(
                     Finding(
@@ -65,7 +64,7 @@ class TlsPostureCheck(Check):
             if legacy is None:
                 continue
             try:
-                await _handshake(target.host, port, legacy, ctx.timeout)
+                await _handshake(resolved, port, legacy, ctx.timeout)
             except (OSError, ssl.SSLError, TimeoutError):
                 continue
             findings.append(

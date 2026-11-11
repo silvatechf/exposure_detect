@@ -37,6 +37,23 @@ def test_expired_scope_rejected():
         make(valid_until=date(2020, 1, 1)).check("192.0.2.10")
 
 
+def test_resolved_address_denial_overrides_hostname_authorization():
+    scope = make(allowed=["*.lab.example.com"], denied=["203.0.113.0/24"])
+    with pytest.raises(ScopeError, match="resolved address explicitly denied"):
+        scope.check_resolved_address("203.0.113.7")
+
+
+def test_resolved_address_checks_scope_expiry():
+    scope = make(valid_until=date(2020, 1, 1))
+    with pytest.raises(ScopeError, match="scope expired"):
+        scope.check_resolved_address("192.0.2.10")
+
+
+def test_resolved_address_requires_ip_literal():
+    with pytest.raises(ScopeError, match="not an IP address"):
+        make().check_resolved_address("device.example")
+
+
 def test_missing_file_fails_closed(tmp_path):
     with pytest.raises(ScopeError):
         Scope.load(tmp_path / "nope.yaml")

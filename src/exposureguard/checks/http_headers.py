@@ -11,6 +11,7 @@ from exposureguard.checks._net import url_host
 from exposureguard.domain.models import Finding, Severity, Target
 from exposureguard.engine.base import Check, ScanContext
 from exposureguard.engine.registry import register
+from exposureguard.networking.http import pinned_client
 from exposureguard.runtime_eol import php_status
 
 VERSION_RE = re.compile(r"\d+\.\d+")
@@ -26,9 +27,11 @@ class HttpHeadersCheck(Check):
         web_ports = sorted(open_ports & (ctx.http_ports | ctx.https_ports))
         findings: list[Finding] = []
         # Posture check, not a trust decision: certificate validity is covered by tls_posture.
-        async with httpx.AsyncClient(
-            trust_env=False,
-            verify=False, timeout=ctx.timeout, follow_redirects=False  # noqa: S501
+        async with pinned_client(
+            target.host,
+            ctx.resolved_targets[target.host].addresses,
+            timeout=ctx.timeout,
+            verify=False,
         ) as client:
             for port in web_ports:
                 https = port in ctx.https_ports

@@ -10,6 +10,7 @@ from exposureguard.domain.controls import standards_for
 from exposureguard.domain.models import ScanResult, Target
 from exposureguard.engine.base import ScanContext
 from exposureguard.engine.registry import all_checks
+from exposureguard.networking.resolution import ResolvedTarget, resolve_target
 from exposureguard.scope import Scope
 
 
@@ -31,8 +32,25 @@ async def run_scan(
     concurrency: int = 10,
 ) -> ScanResult:
     ctx = ctx or ScanContext()
-    for t in targets:  # fail closed before any packet is sent
-        scope.check(t.host)
+    # A ScanContext may be reused by a caller, but DNS snapshots must never cross scans.
+    ctx.resolved_targets.clear()
+
+    # Complete authorization and DNS preflight for every target before any probe starts.
+    for target in targets:
+        scope.check(target.host)
+
+    snapshots: dict[str, tuple[str, ...]] = {}
+    for target in targets:
+        key = target.host.rstrip(".").lower()
+        if key not in snapshots:
+            resolved = await resolve_target(target.host, timeout=ctx.timeout)
+            for address in resolved.addresses:
+                scope.check_resolved_address(address)
+            snapshots[key] = resolved.addresses
+        ctx.resolved_targets[target.host] = ResolvedTarget(
+            host=target.host,
+            addresses=snapshots[key],
+        )
 
     result = ScanResult(targets=targets)
     checks = {cid: cls() for cid, cls in all_checks().items()}

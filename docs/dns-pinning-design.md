@@ -1,11 +1,11 @@
 # DNS Resolution and Connection Pinning Design
 
-**Status:** Proposed for v0.4; implementation not yet complete  
+**Status:** Implemented in PR #10; CI passed on Python 3.11/3.12; final review pending  
 **Security issue:** [#3 — pin DNS resolutions and enforce scope at connection time](https://github.com/silvatechf/exposure_detect/issues/3)
 
 ## Context
 
-The scan runner currently checks the submitted hostname against the authorization scope, but individual transports resolve that hostname later. The current code opens connections through `asyncio.open_connection(hostname, ...)`, HTTPX clients, and UDP endpoints using a hostname. A DNS answer can therefore change after the scope preflight.
+Before this implementation, the scan runner checked the submitted hostname but individual transports resolved it later. That time-of-check/time-of-use gap is addressed by the per-scan snapshot and pinned transport implementation in PR #10.
 
 This is a time-of-check/time-of-use gap. Scope validation must govern the actual destination address, not merely the string supplied by the caller.
 
@@ -26,7 +26,7 @@ This is a time-of-check/time-of-use gap. Scope validation must govern the actual
 
 - Add an immutable `ResolvedTarget` value containing the normalized original host and an ordered, de-duplicated tuple of numeric IPv4/IPv6 addresses.
 - Add a resolver service used only by the runner. It uses the event loop resolver once per target, with a strict timeout and a bounded result count.
-- The runner first checks the hostname scope, resolves it, validates the complete address set against deny rules, and stores the snapshot in `ScanContext`. No check is invoked until every target has completed this preflight.
+- The runner first checks the hostname scope, resolves each unique hostname once per scan, validates the complete address set against deny rules, and stores the snapshot in `ScanContext`. A reused `ScanContext` is cleared before preflight so snapshots never cross scan boundaries. No check is invoked until every target has completed this preflight.
 - A resolution error, empty answer, malformed address, excessive answer set, or denied answer aborts the scan before probes begin. It must not become a normal "no findings" result.
 
 ### Raw TCP, TLS, and UDP
@@ -37,14 +37,12 @@ This is a time-of-check/time-of-use gap. Scope validation must govern the actual
 
 ### HTTPX
 
-HTTPX must retain the URL hostname so that Host and TLS SNI/certificate verification remain correct. Replacing the URL hostname with an IP and manually setting Host is insufficient because it changes TLS SNI and certificate-name validation.
+HTTPX retains the URL hostname so that Host and TLS SNI/certificate verification remain correct. Replacing the URL hostname with an IP and manually setting Host is insufficient because it changes TLS SNI and certificate-name validation. PR #10 implements a dedicated HTTPX async transport backed by the public HTTP Core network backend API. The backend verifies the requested origin host and connects only to numeric addresses from the immutable snapshot. HTTP Core continues to own HTTP framing, Host, TLS SNI, certificate verification, and response handling. The transport uses no proxy, disables keep-alive pooling, and maps HTTP Core network/protocol/timeout failures to HTTPX network errors.
 
-The preferred integration is a dedicated HTTPX async transport backed by an explicit HTTP Core network backend. The backend receives the origin hostname from HTTP Core and substitutes only the socket destination with a validated address from the scan snapshot. HTTP Core continues to own HTTP framing, Host, TLS SNI, certificate verification, connection pooling, and response handling.
-
-- Declare and pin the supported HTTP Core API range as a direct dependency if the adapter uses it directly.
-- Keep proxy support disabled for scan traffic.
-- Do not mutate HTTPX private attributes or monkeypatch global socket/DNS functions.
-- If a stable public transport extension cannot be achieved for the supported dependency range, evaluate a single HTTP client with a documented custom resolver rather than shipping a fragile private-API adapter.
+- HTTP Core is declared as a direct dependency (`httpcore>=1.0,<2.0`) because the adapter uses its public async transport/backend interfaces.
+- Proxy support is disabled for scan traffic; the transport uses a direct connection pool.
+- The adapter does not mutate HTTPX private attributes or monkeypatch global socket/DNS functions.
+- The integration is implemented in `exposureguard.networking.http`; all HTTPX-backed checks use the scan snapshot.
 
 ## Scope semantics
 
@@ -68,18 +66,19 @@ The preferred integration is a dedicated HTTPX async transport backed by an expl
 ### Transport tests
 
 - A fake resolver returns a local test server address for a test hostname.
-- After preflight, the fake resolver is changed to return a different address. TCP, UDP, HTTP, RTSP, and TLS must still connect only to the pinned address.
-- HTTP Host and TLS SNI remain the original hostname.
-- Certificate hostname validation uses the original hostname.
+- Duplicate target hostnames share one snapshot within a scan; a reused context triggers a fresh resolution on the next scan.
+- TCP service discovery and UDP integration tests prove that the hostname is not resolved after preflight.
+- HTTP tests prove Host preservation, SNI preservation, acceptance of a trusted matching certificate, and rejection of a hostname mismatch.
+- Raw MQTT/Redis/RTSP/Modbus checks share the pinned TCP connector; the RTSP request retains the original hostname at the protocol layer.
 - A pinned connection failure never retries by resolving the original hostname.
 - Proxy environment variables cannot change the destination.
 
 ### Regression and CI
 
-- Run the complete suite on Python 3.11 and 3.12.
-- Run Ruff, `pip-audit --skip-editable`, and `pip check`.
-- Add an integration test proving that no network check can bypass the pinned connector.
-- Update README, architecture, threat model, and roadmap only after the end-to-end tests pass.
+- Unit and local-server integration coverage includes DNS bounds, scope expiry/denials, complete preflight ordering, duplicate-host snapshot lifecycle, pinned TCP discovery, UDP destination pinning, HTTP Host preservation, HTTPS SNI/certificate validation, and hostname mismatch rejection.
+- Latest CI passed on Python 3.11 and 3.12: 124 tests per interpreter, Ruff, `pip-audit --skip-editable`, `pip check`, and GitGuardian.
+- The network-path audit found hostname resolution only in the dedicated resolver; connection creation is confined to the pinned networking primitives.
+- Final review remains pending; keep issue #3 open until the PR review and integration decision are complete.
 
 ## Rollout
 
