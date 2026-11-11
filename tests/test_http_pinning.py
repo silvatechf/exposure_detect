@@ -3,6 +3,7 @@ import asyncio
 import httpx
 import pytest
 
+from exposureguard.checks.http_form_login import _origin
 from exposureguard.networking.http import pinned_client
 
 from .helpers import PlainHandler, serve
@@ -139,3 +140,16 @@ async def test_https_transport_preserves_original_sni_and_certificate_hostname(t
     finally:
         server.close()
         await server.wait_closed()
+
+
+def test_login_form_action_origin_includes_scheme_host_and_effective_port():
+    assert _origin("http://device.lab.example/path") == _origin(
+        "http://DEVICE.lab.example:80/other"
+    )
+    assert _origin("http://device.lab.example:8080/path") != _origin(
+        "http://device.lab.example:8081/path"
+    )
+    assert _origin("http://device.lab.example/path") != _origin(
+        "https://device.lab.example/path"
+    )
+    assert _origin("http://user:secret@device.lab.example/path") is None
