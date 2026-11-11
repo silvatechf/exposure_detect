@@ -80,6 +80,18 @@ class Scope:
             return host.endswith(rule[1:])
         return host == rule
 
+    def check_resolved_address(self, address: str, today: date | None = None) -> None:
+        """Reject explicitly denied DNS answers; hostname authorization is checked separately."""
+        today = today or date.today()
+        if self.valid_until and today > self.valid_until:
+            raise ScopeError(f"scope expired on {self.valid_until}")
+        try:
+            ipaddress.ip_address(address)
+        except ValueError as exc:
+            raise ScopeError("resolved target is not an IP address") from exc
+        if any(self._matches(address, rule) for rule in self.denied):
+            raise ScopeError(f"resolved address explicitly denied by scope: {address}")
+
     def check(self, host: str, today: date | None = None) -> None:
         today = today or date.today()
         if self.valid_until and today > self.valid_until:
