@@ -2,7 +2,7 @@
 
 **Authorization-first exposure assessment for connected devices.**
 
-ExposureNetect helps identify and document externally observable security exposure across explicitly scoped IoT devices, industrial gateways, cameras, and embedded web interfaces.
+ExposureDetect helps identify and document externally observable security exposure across explicitly scoped IoT devices, industrial gateways, cameras, and embedded web interfaces.
 
 > **Project status:** active prototype, version 0.3.2. Automated tests cover the bundled local lab; real hardware, Docker Compose, PostgreSQL deployment, and the GitHub Action still require independent validation.
 
@@ -85,7 +85,7 @@ exposuredetect scan -t 192.0.2.10 --format sarif -o out.sarif --baseline baselin
 exposuredetect diff baseline.json current.json
 ```
 
-The GitHub Action is defined in `action.yml`. Use a self-hosted runner inside the lab network; GitHub-hosted runners cannot reach private devices. The action definition and SARIF upload path still require validation in a real repository workflow.
+The GitHub Action is defined in `action.yml`. Use a self-hosted runner inside the lab network; GitHub-hosted runners cannot reach private devices. A caller workflow that uploads SARIF must grant `contents: read` and `security-events: write`. The action definition and SARIF upload path still require validation in a real repository workflow.
 
 ### Docker Compose (API + PostgreSQL)
 
