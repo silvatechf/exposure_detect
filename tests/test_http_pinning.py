@@ -26,7 +26,7 @@ async def test_http_transport_connects_to_snapshot_ip_without_resolving_origin_h
         ) as client:
             response = await client.get(f"http://localhost:{port}/")
         assert response.status_code == 200
-        assert "127.0.0.1" in queried_hosts
+        assert "localhost" not in queried_hosts
     finally:
         server.shutdown()
 
