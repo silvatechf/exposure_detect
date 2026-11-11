@@ -1,8 +1,8 @@
-# ExposureNetect
+# ExposureDetect
 
 **Authorization-first exposure assessment for connected devices.**
 
-ExposureNetect helps identify and document externally observable security exposure across explicitly scoped IoT devices, industrial gateways, cameras, and embedded web interfaces.
+ExposureDetect helps identify and document externally observable security exposure across explicitly scoped IoT devices, industrial gateways, cameras, and embedded web interfaces.
 
 > **Project status:** active prototype, version 0.3.2. Automated tests cover the bundled local lab; real hardware, Docker Compose, PostgreSQL deployment, and the GitHub Action still require independent validation.
 
@@ -85,7 +85,25 @@ exposuredetect scan -t 192.0.2.10 --format sarif -o out.sarif --baseline baselin
 exposuredetect diff baseline.json current.json
 ```
 
-The GitHub Action is defined in `action.yml`. Use a self-hosted runner inside the lab network; GitHub-hosted runners cannot reach private devices. The action definition and SARIF upload path still require validation in a real repository workflow.
+The GitHub Action is defined in `action.yml`. Use a self-hosted runner inside the lab network; GitHub-hosted runners cannot reach private devices. A caller workflow that uploads SARIF must grant `contents: read` and `security-events: write`. The action definition and SARIF upload path still require validation in a real repository workflow.
+
+### Docker Compose (API + PostgreSQL)
+
+The Compose stack is a local deployment baseline, not a production deployment profile. It binds the API to loopback, runs the API as a non-root user with a read-only root filesystem, drops Linux capabilities, and waits for PostgreSQL health before starting the API.
+
+```powershell
+Copy-Item .env.example .env
+# Edit .env: set POSTGRES_PASSWORD to 64 hexadecimal characters and
+# replace the EG_API_KEYS placeholder with a unique random key.
+Copy-Item scope.example.yaml scope.yaml
+docker compose up --build -d
+docker compose ps
+Invoke-RestMethod http://127.0.0.1:8000/healthz
+```
+
+The database password must be URL-safe because Compose interpolates it into the SQLAlchemy connection URL. A 64-character hexadecimal value generated with `python -c "import secrets; print(secrets.token_hex(32))"` is suitable. Do not commit `.env` or real scope files. The API health check confirms HTTP process availability; database connectivity is established during application startup when the repository creates its tables.
+
+To stop the stack while preserving PostgreSQL data, run `docker compose down`. Removing the named volume is destructive and is intentionally not part of the normal workflow.
 
 ### HTTP API
 
@@ -133,5 +151,5 @@ The public project name and Python distribution are **ExposureDetect** (`exposur
 - Device profiles are starting points and need tuning for each environment.
 - End-to-end validation has used bundled fake devices, **not real IoT or industrial hardware**.
 - The standards mapping is indicative; verify current standard text before citing it.
-- DNS pinning is implemented in `main`; it does not validate the trustworthiness of authoritative DNS answers received during preflight. Rate limiting is per process. Docker Compose/PostgreSQL and the GitHub Action are not yet validated for production deployment.
+- DNS pinning is implemented in `main`; it does not validate the trustworthiness of authoritative DNS answers received during preflight. Rate limiting is per process. Docker Compose/PostgreSQL and the GitHub Action have local configuration hardening, but still require execution in a real deployment workflow before production use.
 - ExposureDetect does not replace Nmap, Nuclei, EDR, or a dedicated vulnerability scanner. It focuses on exposure posture and secure-by-default evidence.

@@ -14,7 +14,7 @@ from exposureguard.storage.repository import Repository
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
     app = FastAPI(
-        title="ExposureGuard",
+        title="ExposureDetect",
         version=__version__,
         docs_url=None,
         redoc_url=None,

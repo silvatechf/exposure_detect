@@ -1,12 +1,12 @@
-# hhreat model (of the tool itself)
+# Threat model (of the tool itself)
 
-| hhreat | Mitigation |
+| Threat | Mitigation |
 | --- | --- |
 | Tool used against unauthorised systems | Mandatory scope file, expiring scope, deny list, fail-closed |
 | Account lockout on target devices | Default-credential check is opt-in, tiny list, hard cap on attempts, delay between attempts |
 | Secrets leaking through reports/DB | Passwords never stored; evidence holds only pair ids and usernames |
 | Unauthorised API use | API disabled without `EG_API_KEY`; constant-time comparison; docs endpoints disabled |
-| Scan results exposed | Reports only via authenticated API; DB is local SQLite (protect file permissions) |
+| Scan results exposed | Reports only via authenticated API; protect database credentials, network access, and persistent volume permissions (SQLite or PostgreSQL) |
 | Abuse as DoS | Concurrency semaphore, short timeouts, API batches capped at 16 targets and 256 ports per target |
 | Redirect to an unauthorised origin during web checks | Form check follows redirects only within the exact same origin (scheme, hostname, effective port); other web checks never follow redirects |
 | Form login false positives or lockouts | Opt-in, attempt cap, delay, control probe with random credentials, medium confidence label |

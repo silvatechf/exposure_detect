@@ -1,25 +1,50 @@
-# API + PostgreSQL. Not exercised in the original test environment: validate before production use.
+# Local API + PostgreSQL stack. Use a URL-safe hexadecimal POSTGRES_PASSWORD.
 services:
   db:
     image: postgres:16
     environment:
       POSTGRES_USER: exposureguard
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: exposureguard
-    volumes: [pgdata:/var/lib/postgresql/data]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U exposureguard"]
+      test: ["CMD-SHELL", "pg_isready -U exposureguard -d exposureguard"]
       interval: 5s
+      timeout: 3s
       retries: 10
+      start_period: 5s
   api:
     build: .
     depends_on:
-      db: { condition: service_healthy }
+      db:
+        condition: service_healthy
     environment:
-      EG_API_KEYS: ${EG_API_KEYS:?set EG_API_KEYS as name:role:key,...}
+      EG_API_KEYS: ${EG_API_KEYS:?set EG_API_KEYS in .env}
       EG_SCOPE_FILE: /config/scope.yaml
       EG_DATABASE_URL: postgresql+psycopg://exposureguard:${POSTGRES_PASSWORD}@db:5432/exposureguard
-    volumes: ["./scope.yaml:/config/scope.yaml:ro"]
-    ports: ["127.0.0.1:8000:8000"]
+    volumes:
+      - ./scope.yaml:/config/scope.yaml:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 volumes:
   pgdata:

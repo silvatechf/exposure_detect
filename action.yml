@@ -73,9 +73,10 @@ runs:
         [ -n "$PROFILE" ] && args+=(--profile "$PROFILE")
         [ -n "$BASELINE" ] && args+=(--baseline "$BASELINE")
         eg "${args[@]}"
-        echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        scan_exit_code=$?
+        echo "exit_code=$scan_exit_code" >> "$GITHUB_OUTPUT"
     - name: Upload SARIF
-      if: ${{ inputs.upload-sarif == 'true' && always() }}
+      if: ${{ inputs.upload-sarif == 'true' && always() && steps.scan.outputs.exit_code != '' && hashFiles(inputs.sarif-file) != '' }}
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ${{ inputs.sarif-file }}
