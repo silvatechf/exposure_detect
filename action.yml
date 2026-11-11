@@ -44,7 +44,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-python@v7
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
       with:
         python-version: "3.12"
     - name: Install ExposureDetect
@@ -77,7 +77,7 @@ runs:
         echo "exit_code=$scan_exit_code" >> "$GITHUB_OUTPUT"
     - name: Upload SARIF
       if: ${{ inputs.upload-sarif == 'true' && always() && steps.scan.outputs.exit_code != '' && hashFiles(inputs.sarif-file) != '' }}
-      uses: github/codeql-action/upload-sarif@v4
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
       with:
         sarif_file: ${{ inputs.sarif-file }}
     - name: Fail on findings
