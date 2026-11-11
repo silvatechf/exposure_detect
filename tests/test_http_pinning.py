@@ -56,3 +56,52 @@ async def test_http_transport_rejects_origin_outside_snapshot():
     ) as client:
         with pytest.raises(httpx.NetworkError, match="origin does not match"):
             await client.get("http://other.lab.example/")
+
+
+async def test_https_transport_preserves_original_sni_and_certificate_hostname():
+    import ssl
+    from pathlib import Path
+
+    fixture_dir = Path(__file__).parent / "fixtures" / "tls"
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.load_cert_chain(
+        certfile=fixture_dir / "server.crt",
+        keyfile=fixture_dir / "server.key",
+    )
+    observed_sni = []
+
+    def capture_sni(ssl_object, server_name, initial_context):
+        observed_sni.append(server_name)
+
+    server_context.set_servername_callback(capture_sni)
+
+    async def handle(reader, writer):
+        try:
+            await reader.readuntil(b"\\r\\n\\r\\n")
+            writer.write(
+                b"HTTP/1.1 200 OK\\r\\nContent-Length: 2\\r\\n"
+                b"Connection: close\\r\\n\\r\\nok"
+            )
+            await writer.drain()
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
+    server = await asyncio.start_server(
+        handle, "127.0.0.1", 0, ssl=server_context
+    )
+    port = server.sockets[0].getsockname()[1]
+    client_context = ssl.create_default_context(cafile=str(fixture_dir / "server.crt"))
+    try:
+        async with pinned_client(
+            "camera.lab.example",
+            ("127.0.0.1",),
+            timeout=2.0,
+            verify=client_context,
+        ) as client:
+            response = await client.get(f"https://camera.lab.example:{port}/")
+        assert response.status_code == 200
+        assert observed_sni == ["camera.lab.example"]
+    finally:
+        server.close()
+        await server.wait_closed()
