@@ -19,7 +19,7 @@ class ModbusUnauthenticatedCheck(Check):
         findings = []
         ports = sorted(ctx.open_ports.get(target.host, set()) & ctx.service_ports.get("modbus", set()))
         for port in ports:
-            resp = await exchange(target.host, port, modbus.build_read_device_id(), ctx.timeout)
+            resp = await exchange(ctx.resolved_targets[target.host], port, modbus.build_read_device_id(), ctx.timeout)
             kind = modbus.parse_response(resp, 1) if resp else None
             if kind is None:
                 continue
