@@ -3,9 +3,9 @@ requires = ["setuptools>=84.1.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "exposureguard"
+name = "exposuredetect"
 version = "0.3.2"
-description = "Lightweight exposure-posture scanner for connected devices: exposed services, default credentials and secure-by-default checks."
+description = "Authorization-first exposure assessment for explicitly scoped connected devices."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -24,6 +24,7 @@ postgres = ["psycopg[binary]>=3.1"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4", "pip-audit>=2.7", "httpx2>=2.0,<3.0"]
 
 [project.scripts]
+exposuredetect = "exposureguard.cli:app"
 eg = "exposureguard.cli:app"
 
 [tool.setuptools.packages.find]
