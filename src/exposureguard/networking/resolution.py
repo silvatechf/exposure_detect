@@ -53,9 +53,9 @@ async def resolve_target(
             except ValueError as exc:
                 raise ResolutionError("resolver returned a malformed address") from exc
         if not values:
-            raise ResolutionError(f"DNS returned no usable addresses for {host}")
+            raise ResolutionError(f"DNS returned no usable addresses for {host}") from None
         if len(values) > max_addresses:
-            raise ResolutionError(f"DNS answer set exceeds {max_addresses} addresses")
+            raise ResolutionError(f"DNS answer set exceeds {max_addresses} addresses") from None
         addresses = tuple(str(item) for item in sorted(values, key=lambda ip: (ip.version, ip.packed)))
     else:
         addresses = (str(literal),)
