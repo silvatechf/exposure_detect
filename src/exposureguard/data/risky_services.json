@@ -1,0 +1,116 @@
+{
+  "21": {
+    "name": "FTP",
+    "severity": "HIGH",
+    "why": "Cleartext file transfer; credentials and data travel unencrypted.",
+    "fix": "Disable FTP; use SFTP/FTPS restricted to management networks."
+  },
+  "23": {
+    "name": "Telnet",
+    "severity": "CRITICAL",
+    "why": "Cleartext remote shell, a classic entry point for IoT compromise.",
+    "fix": "Disable Telnet; use SSH with key-based auth on a management network."
+  },
+  "445": {
+    "name": "SMB",
+    "severity": "HIGH",
+    "why": "File-sharing protocol with a long history of remote exploits.",
+    "fix": "Do not expose SMB to untrusted networks; patch and restrict by firewall."
+  },
+  "1883": {
+    "name": "MQTT (plain)",
+    "severity": "MEDIUM",
+    "why": "Unencrypted MQTT broker; often deployed without authentication.",
+    "fix": "Require authentication and TLS (port 8883); restrict by firewall."
+  },
+  "3389": {
+    "name": "RDP",
+    "severity": "HIGH",
+    "why": "Remote desktop exposed to the network is a frequent ransomware vector.",
+    "fix": "Place behind VPN or a zero-trust gateway; enforce MFA and NLA."
+  },
+  "5900": {
+    "name": "VNC",
+    "severity": "HIGH",
+    "why": "Remote desktop protocol, often weak or no authentication.",
+    "fix": "Disable or tunnel through VPN/SSH; enforce strong authentication."
+  },
+  "6379": {
+    "name": "Redis",
+    "severity": "HIGH",
+    "why": "In-memory datastore that is unauthenticated by default in many setups.",
+    "fix": "Bind to localhost or a private interface; enable ACLs and requirepass."
+  },
+  "9200": {
+    "name": "Elasticsearch",
+    "severity": "HIGH",
+    "why": "Search/data API frequently exposed without authentication.",
+    "fix": "Enable security features and restrict network access."
+  },
+  "27017": {
+    "name": "MongoDB",
+    "severity": "HIGH",
+    "why": "Database port; historically exposed without authentication.",
+    "fix": "Enable authentication; bind to private interfaces only."
+  },
+  "502": {
+    "name": "Modbus/TCP",
+    "severity": "HIGH",
+    "why": "Industrial protocol with no built-in authentication or encryption.",
+    "fix": "Never expose to the internet; segment OT networks and use a gateway."
+  },
+  "554": {
+    "name": "RTSP",
+    "severity": "MEDIUM",
+    "why": "Camera video streams are often exposed without authentication.",
+    "fix": "Require authentication and restrict to the VMS network."
+  },
+  "102": {
+    "name": "Siemens S7comm",
+    "severity": "HIGH",
+    "why": "Industrial PLC protocol without authentication or encryption.",
+    "fix": "Never expose to untrusted networks; segment OT and use a controlled gateway."
+  },
+  "2375": {
+    "name": "Docker API (plain)",
+    "severity": "CRITICAL",
+    "why": "Unauthenticated Docker daemon API gives full control of the host.",
+    "fix": "Disable the TCP listener or require mutual TLS; bind to a Unix socket."
+  },
+  "3306": {
+    "name": "MySQL",
+    "severity": "MEDIUM",
+    "why": "Database port reachable from the network.",
+    "fix": "Bind to private interfaces and restrict by firewall; require TLS."
+  },
+  "5432": {
+    "name": "PostgreSQL",
+    "severity": "MEDIUM",
+    "why": "Database port reachable from the network.",
+    "fix": "Restrict via pg_hba.conf and firewall; require TLS."
+  },
+  "5984": {
+    "name": "CouchDB",
+    "severity": "HIGH",
+    "why": "Database HTTP API frequently exposed with weak or no authentication.",
+    "fix": "Enable authentication and restrict network access."
+  },
+  "11211": {
+    "name": "Memcached",
+    "severity": "HIGH",
+    "why": "Cache service with no authentication by default.",
+    "fix": "Bind to localhost or private interface; firewall the port."
+  },
+  "20000": {
+    "name": "DNP3",
+    "severity": "HIGH",
+    "why": "Industrial protocol with no built-in authentication in common deployments.",
+    "fix": "Keep inside the OT network; use a secure gateway."
+  },
+  "44818": {
+    "name": "EtherNet/IP",
+    "severity": "HIGH",
+    "why": "Industrial protocol with no built-in authentication.",
+    "fix": "Never expose to untrusted networks; segment OT."
+  }
+}

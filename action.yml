@@ -1,0 +1,87 @@
+name: "ExposureDetect scan"
+description: "Run an authorised exposure-posture scan and publish results as SARIF code-scanning alerts."
+author: "ExposureDetect"
+inputs:
+  targets:
+    description: "Comma-separated hosts/IPs to scan. Must be listed in the scope file."
+    required: true
+  scope-file:
+    description: "Path to the scope file declaring what you are authorised to scan."
+    required: false
+    default: "scope.yaml"
+  fail-on:
+    description: "Fail the job if a finding at or above this severity exists (info|low|medium|high|critical)."
+    required: false
+    default: "high"
+  allow-credential-checks:
+    description: "Enable opt-in default-credential checks (HTTP Basic, web form, SNMP)."
+    required: false
+    default: "false"
+  allow-industrial-probes:
+    description: "Enable opt-in read-only industrial probes (Modbus). Do not use against live plants without approval."
+    required: false
+    default: "false"
+  profile:
+    description: "Device profile name or YAML file (camera, sensor, industrial-gateway, plc, generic-web)."
+    required: false
+    default: ""
+  baseline-file:
+    description: "Previous JSON report; only NEW findings count towards fail-on."
+    required: false
+    default: ""
+  sarif-file:
+    description: "Where to write the SARIF report."
+    required: false
+    default: "exposuredetect.sarif"
+  sarif-artifact:
+    description: "Repository file that SARIF results are anchored to (must exist in the repo)."
+    required: false
+    default: "README.md"
+  upload-sarif:
+    description: "Upload the SARIF file to GitHub code scanning."
+    required: false
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install ExposureDetect
+      shell: bash
+      run: pip install "${{ github.action_path }}"
+    - name: Scan
+      id: scan
+      shell: bash
+      env:
+        TARGETS: ${{ inputs.targets }}
+        SCOPE: ${{ inputs.scope-file }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        ALLOW_CRED: ${{ inputs.allow-credential-checks }}
+        ALLOW_IND: ${{ inputs.allow-industrial-probes }}
+        PROFILE: ${{ inputs.profile }}
+        BASELINE: ${{ inputs.baseline-file }}
+        SARIF: ${{ inputs.sarif-file }}
+        ARTIFACT: ${{ inputs.sarif-artifact }}
+      run: |
+        set +e
+        args=(scan --scope "$SCOPE" --format sarif --output "$SARIF" --fail-on "$FAIL_ON" --sarif-artifact "$ARTIFACT")
+        IFS=',' read -ra HOSTS <<< "$TARGETS"
+        for h in "${HOSTS[@]}"; do args+=(--target "$(echo "$h" | xargs)"); done
+        [ "$ALLOW_CRED" = "true" ] && args+=(--allow-credential-checks)
+        [ "$ALLOW_IND" = "true" ] && args+=(--allow-industrial-probes)
+        [ -n "$PROFILE" ] && args+=(--profile "$PROFILE")
+        [ -n "$BASELINE" ] && args+=(--baseline "$BASELINE")
+        eg "${args[@]}"
+        echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+    - name: Upload SARIF
+      if: ${{ inputs.upload-sarif == 'true' && always() }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-file }}
+    - name: Fail on findings
+      if: ${{ steps.scan.outputs.exit_code != '0' }}
+      shell: bash
+      env:
+        CODE: ${{ steps.scan.outputs.exit_code }}
+      run: exit "$CODE"
