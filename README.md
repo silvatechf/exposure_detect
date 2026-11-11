@@ -1,8 +1,8 @@
-# ExposureDetect
+# ExposureNetect
 
 **Authorization-first exposure assessment for connected devices.**
 
-ExposureDetect helps identify and document externally observable security exposure across explicitly scoped IoT devices, industrial gateways, cameras, and embedded web interfaces.
+ExposureNetect helps identify and document externally observable security exposure across explicitly scoped IoT devices, industrial gateways, cameras, and embedded web interfaces.
 
 > **Project status:** active prototype, version 0.3.2. Automated tests cover the bundled local lab; real hardware, Docker Compose, PostgreSQL deployment, and the GitHub Action still require independent validation.
 
