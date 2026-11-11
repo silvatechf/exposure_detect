@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 from typing import ClassVar
 
 from exposureguard.domain.models import Finding, Target
-from exposureguard.profiles import Profile
 from exposureguard.networking.resolution import ResolvedTarget
+from exposureguard.profiles import Profile
 
 
 @dataclass
