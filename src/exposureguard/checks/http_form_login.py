@@ -84,16 +84,39 @@ def looks_success(resp: httpx.Response) -> bool:
     return False
 
 
+def _origin(url: str) -> tuple[str, str, int | None] | None:
+    """Return a normalized HTTP origin; reject malformed or credentialed URLs."""
+    parsed = urlparse(url)
+    if parsed.username is not None or parsed.password is not None:
+        return None
+    scheme = parsed.scheme.lower()
+    hostname = (parsed.hostname or "").lower()
+    if not hostname or scheme not in ("http", "https"):
+        return None
+    try:
+        port = parsed.port
+    except ValueError:
+        return None
+    if port is None:
+        port = 443 if scheme == "https" else 80
+    return scheme, hostname, port
+
+
 async def _get_same_host(client: httpx.AsyncClient, url: str, host: str, hops: int = 3) -> httpx.Response | None:
+    """Follow redirects only while scheme, host, and effective port remain unchanged."""
+    origin = _origin(url)
+    if origin is None or origin[1] != host.lower():
+        return None
     for _ in range(hops + 1):
         try:
             resp = await client.get(url)
         except httpx.HTTPError:
             return None
         if resp.status_code in (301, 302, 303, 307, 308) and resp.headers.get("location"):
-            url = urljoin(str(resp.url), resp.headers["location"])
-            if urlparse(url).hostname != host:
-                return None  # never leave the authorised host
+            next_url = urljoin(str(resp.url), resp.headers["location"])
+            if _origin(next_url) != origin:
+                return None
+            url = next_url
             continue
         return resp
     return None
