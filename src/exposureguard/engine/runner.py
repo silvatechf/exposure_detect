@@ -11,7 +11,7 @@ from exposureguard.domain.models import ScanResult, Target
 from exposureguard.engine.base import ScanContext
 from exposureguard.engine.registry import all_checks
 from exposureguard.scope import Scope
-from exposureguard.networking.resolution import ResolutionError, resolve_target
+from exposureguard.networking.resolution import resolve_target
 
 
 def _opted_in(check, ctx: ScanContext) -> bool:
@@ -36,10 +36,7 @@ async def run_scan(
     for target in targets:
         scope.check(target.host)
     for target in targets:
-        try:
-            resolved = await resolve_target(target.host, timeout=ctx.timeout)
-        except ResolutionError:
-            raise
+        resolved = await resolve_target(target.host, timeout=ctx.timeout)
         for address in resolved.addresses:
             scope.check_resolved_address(address)
         ctx.resolved_targets[target.host] = resolved
