@@ -1,8 +1,8 @@
 from exposureguard.checks.default_credentials import DefaultCredentialsCheck
 from exposureguard.domain.models import Severity, Target
 from exposureguard.engine.base import ScanContext
-from exposureguard.networking.resolution import ResolvedTarget
 from exposureguard.engine.runner import run_scan
+from exposureguard.networking.resolution import ResolvedTarget
 
 from .helpers import make_basic_handler, serve
 
