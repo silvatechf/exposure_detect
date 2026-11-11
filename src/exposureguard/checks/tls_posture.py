@@ -64,7 +64,7 @@ class TlsPostureCheck(Check):
             if legacy is None:
                 continue
             try:
-                await _handshake(target.host, port, legacy, ctx.timeout)
+                await _handshake(resolved, port, legacy, ctx.timeout)
             except (OSError, ssl.SSLError, TimeoutError):
                 continue
             findings.append(
