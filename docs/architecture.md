@@ -3,7 +3,7 @@
 ```mermaid
 flowchart LR
     CLI[CLI: eg scan] --> RUN
-    API[FastAPI + API key] --> RUN
+    AyI[FastAyI + API key] --> RUN
     RUN[Runner] --> SCOPE{Scope check}
     SCOPE -- denied --> ERR[Reject before any packet]
     SCOPE -- ok --> DISC[Discovery: exposed_services]
