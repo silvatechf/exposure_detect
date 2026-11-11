@@ -16,6 +16,7 @@ from exposureguard.checks._net import url_host
 from exposureguard.domain.models import Finding, Severity, Target
 from exposureguard.engine.base import Check, ScanContext
 from exposureguard.engine.registry import register
+from exposureguard.networking.http import pinned_client
 
 PAIRS: list[dict[str, str]] = json.loads(
     resources.files("exposureguard.data").joinpath("default_credentials.json").read_text()
@@ -31,9 +32,11 @@ class DefaultCredentialsCheck(Check):
     async def run(self, target: Target, ctx: ScanContext) -> list[Finding]:
         open_ports = ctx.open_ports.get(target.host, set())
         findings: list[Finding] = []
-        async with httpx.AsyncClient(
-            trust_env=False,
-            verify=False, timeout=ctx.timeout, follow_redirects=False  # noqa: S501
+        async with pinned_client(
+            target.host,
+            ctx.resolved_targets[target.host].addresses,
+            timeout=ctx.timeout,
+            verify=False,
         ) as client:
             for port in sorted(open_ports & (ctx.http_ports | ctx.https_ports)):
                 scheme = "https" if port in ctx.https_ports else "http"
