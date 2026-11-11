@@ -111,7 +111,7 @@ class PinnedHTTPTransport(httpx.AsyncBaseTransport):
         )
         try:
             response = await self._pool.handle_async_request(core_request)
-        except httpcore.NetworkError as exc:
+        except (\n            httpcore.NetworkError,\n            httpcore.TimeoutException,\n            httpcore.ProtocolError,\n            httpcore.UnsupportedProtocol,\n            httpcore.ConnectionNotAvailable,\n        ) as exc:
             raise httpx.NetworkError(
                 f"pinned HTTP transport failed: {exc}", request=request
             ) from exc
