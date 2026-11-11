@@ -8,7 +8,7 @@
 | Unauthorised API use | API disabled without `EG_API_KEY`; constant-time comparison; docs endpoints disabled |
 | Scan results exposed | Reports only via authenticated API; DB is local SQLite (protect file permissions) |
 | Abuse as DoS | Concurrency semaphore, short timeouts, API batches capped at 16 targets and 256 ports per target |
-| Redirect to an unauthorised host during web checks | Form check only follows same-host redirects; other web checks never follow redirects |
+| Redirect to an unauthorised origin during web checks | Form check follows redirects only within the exact same origin (scheme, hostname, effective port); other web checks never follow redirects |
 | Form login false positives or lockouts | Opt-in, attempt cap, delay, control probe with random credentials, medium confidence label |
 | Insider misuse of the API | Named keys with roles, audit log of every action including denied scans, per-actor rate limit |
 | Weak API keys | Minimum 16 characters enforced; key names and key material must be unique |
