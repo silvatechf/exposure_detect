@@ -78,9 +78,11 @@ class PinnedHTTPTransport(httpx.AsyncBaseTransport):
     """Public HTTPX transport backed by httpcore's public network backend API."""
 
     def __init__(
-        self, host: str, addresses: tuple[str, ...], *, verify: bool = False
+        self, host: str, addresses: tuple[str, ...], *, verify: bool | ssl.SSLContext = False
     ) -> None:
-        if verify:
+        if isinstance(verify, ssl.SSLContext):
+            ssl_context = verify
+        elif verify:
             ssl_context = ssl.create_default_context()
         else:
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -135,7 +137,7 @@ class PinnedHTTPTransport(httpx.AsyncBaseTransport):
 
 
 def pinned_client(
-    host: str, addresses: tuple[str, ...], *, timeout: float, verify: bool = False
+    host: str, addresses: tuple[str, ...], *, timeout: float, verify: bool | ssl.SSLContext = False
 ) -> httpx.AsyncClient:
     """Build a no-proxy, no-redirect client pinned to the scan's DNS snapshot."""
     transport = PinnedHTTPTransport(host, addresses, verify=verify)
