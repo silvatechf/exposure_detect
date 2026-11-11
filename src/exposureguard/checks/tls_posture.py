@@ -7,8 +7,8 @@ import ssl
 
 from exposureguard.domain.models import Finding, Severity, Target
 from exposureguard.engine.base import Check, ScanContext
-from exposureguard.networking.resolution import ResolvedTarget, open_pinned_connection
 from exposureguard.engine.registry import register
+from exposureguard.networking.resolution import ResolvedTarget, open_pinned_connection
 
 
 def _legacy_context() -> ssl.SSLContext | None:
