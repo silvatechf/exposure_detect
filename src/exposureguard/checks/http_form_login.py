@@ -86,16 +86,16 @@ def looks_success(resp: httpx.Response) -> bool:
 
 def _origin(url: str) -> tuple[str, str, int | None] | None:
     """Return a normalized HTTP origin; reject malformed or credentialed URLs."""
-    parsed = urlparse(url)
+    try:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower()
+        port = parsed.port
+    except ValueError:
+        return None
     if parsed.username is not None or parsed.password is not None:
         return None
     scheme = parsed.scheme.lower()
-    hostname = (parsed.hostname or "").lower()
     if not hostname or scheme not in ("http", "https"):
-        return None
-    try:
-        port = parsed.port
-    except ValueError:
         return None
     if port is None:
         port = 443 if scheme == "https" else 80
