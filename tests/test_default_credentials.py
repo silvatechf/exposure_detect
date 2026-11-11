@@ -2,6 +2,7 @@ from exposureguard.checks.default_credentials import DefaultCredentialsCheck
 from exposureguard.domain.models import Severity, Target
 from exposureguard.engine.base import ScanContext
 from exposureguard.engine.runner import run_scan
+from exposureguard.networking.resolution import ResolvedTarget
 
 from .helpers import make_basic_handler, serve
 
@@ -9,6 +10,7 @@ from .helpers import make_basic_handler, serve
 def _ctx(port):
     ctx = ScanContext(http_ports={port}, credential_delay=0, allow_credential_checks=True)
     ctx.open_ports["127.0.0.1"] = {port}
+    ctx.resolved_targets["127.0.0.1"] = ResolvedTarget("127.0.0.1", ("127.0.0.1",))
     return ctx
 
 
