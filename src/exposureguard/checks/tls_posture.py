@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import ssl
 
 from exposureguard.domain.models import Finding, Severity, Target
