@@ -5,9 +5,10 @@
 ## v0.4 — Security and validation
 - [x] Resolve DNS once per scan, pin validated addresses, and revalidate scope at connection time to mitigate DNS rebinding (integrated via PR #10).
 - [x] Exercise the SQLAlchemy repository against PostgreSQL 16 in CI on Python 3.11 and 3.12 (PR #12).
-- [x] Add baseline container hardening and guard SARIF upload when no report was produced (PR #12).
-- Validate the complete Docker Compose lifecycle and API/PostgreSQL integration on a local Docker host.
-- Validate the GitHub Action and SARIF upload in a real caller workflow.
+- [x] Run the Docker Compose API + PostgreSQL stack in CI, including scan/audit persistence across an API restart (PR #13).
+- [x] Add container hardening and a composite-action SARIF-generation smoke test (PRs #12–13).
+- Validate the Compose workflow on the user's Windows/Docker Desktop environment.
+- Validate SARIF upload to GitHub Code Scanning from a real caller workflow with `security-events: write`.
 - Exercise the scanner against an isolated hardware lab (router, IP camera, and PLC simulator).
 - Record reproducible false-positive cases and add sanitized fixtures from authorized test devices.
 
