@@ -21,9 +21,9 @@
 
 ## DNS rebinding / destination pinning
 
-The implementation in [PR #10](https://github.com/silvatechf/exposure_detect/pull/10) adds a bounded, immutable A/AAAA snapshot per target hostname and per scan. The runner validates every target and resolves all unique hostnames before any probe begins. Explicitly denied IP/CIDR answers reject the complete target, including mixed allow/deny answer sets.
+The implementation integrated through [PR #10](https://github.com/silvatechf/exposure_detect/pull/10) adds a bounded, immutable A/AAAA snapshot per target hostname and per scan. The runner validates every target and resolves all unique hostnames before any probe begins. Explicitly denied IP/CIDR answers reject the complete target, including mixed allow/deny answer sets.
 
-TCP service discovery, raw TCP protocols, UDP/SNMP, TLS, and HTTPX-backed checks use only numeric addresses from the snapshot. HTTP Host, TLS SNI, and certificate hostname validation retain the original hostname. Proxies and hostname fallback are disabled. Python 3.11/3.12 CI, Ruff, dependency audit, dependency consistency, and GitGuardian have passed on the implementation branch; the PR review remains pending. [Issue #3](https://github.com/silvatechf/exposure_detect/issues/3) stays open until the review and integration decision are complete.
+TCP service discovery, raw TCP protocols, UDP/SNMP, TLS, and HTTPX-backed checks use only numeric addresses from the snapshot. HTTP Host, TLS SNI, and certificate hostname validation retain the original hostname. Proxies and hostname fallback are disabled. Python 3.11/3.12 CI, Ruff, dependency audit, dependency consistency, and GitGuardian passed on the integrated PR head. [Issue #3](https://github.com/silvatechf/exposure_detect/issues/3) was resolved by the merge; the residual risk below remains applicable.
 
 Residual risk: pinning prevents DNS changes after preflight from changing the connection destination. It does not establish that the authoritative DNS answer received during preflight is trustworthy. Use controlled DNS and restrictive outbound firewall rules, especially for sensitive environments.
 
