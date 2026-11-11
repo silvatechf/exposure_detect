@@ -4,7 +4,7 @@
 
 ExposureDetect helps identify and document externally observable security exposure across explicitly scoped IoT devices, industrial gateways, cameras, and embedded web interfaces.
 
-> **Project status:** active prototype, version 0.3.2. Automated tests cover the bundled local lab and the SQLAlchemy repository against PostgreSQL 16 on Python 3.11/3.12. CI also builds and runs the Docker Compose API/PostgreSQL stack, verifies persistence across an API restart, and smoke-tests composite-action SARIF generation. Windows/Docker Desktop validation, real hardware, and actual Code Scanning upload from a caller workflow remain pending.
+> **Project status:** active prototype, version 0.3.2. Automated tests cover the bundled local lab and the SQLAlchemy repository against PostgreSQL 16 on Python 3.11, 3.12, and 3.15. CI also builds and runs the Docker Compose API/PostgreSQL stack, verifies persistence across an API restart, and smoke-tests composite-action SARIF generation. Windows/Docker Desktop validation, real hardware, and actual Code Scanning upload from a caller workflow remain pending.
 
 It answers one practical question:
 
