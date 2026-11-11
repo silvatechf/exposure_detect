@@ -1,5 +1,6 @@
 import asyncio
 
+import httpx
 import pytest
 
 from exposureguard.networking.http import pinned_client
@@ -34,5 +35,5 @@ async def test_http_transport_rejects_origin_outside_snapshot():
     async with pinned_client(
         "device.lab.example", ("192.0.2.10",), timeout=1.0, verify=False
     ) as client:
-        with pytest.raises(Exception, match="origin does not match"):
+        with pytest.raises(httpx.NetworkError, match="origin does not match"):
             await client.get("http://other.lab.example/")
