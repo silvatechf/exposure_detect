@@ -45,13 +45,18 @@ async def resolve_target(
                 f"DNS resolution failed for {host}: {type(exc).__name__}"
             ) from exc
         values: set[ipaddress.IPv4Address | ipaddress.IPv6Address] = set()
-        for family, _, _, _, sockaddr in records:
-            if family not in (socket.AF_INET, socket.AF_INET6):
-                continue
-            try:
+        try:
+            for record in records:
+                if len(record) != 5:
+                    raise ResolutionError("resolver returned a malformed record")
+                family, _, _, _, sockaddr = record
+                if family not in (socket.AF_INET, socket.AF_INET6):
+                    continue
+                if not isinstance(sockaddr, tuple) or not sockaddr:
+                    raise ResolutionError("resolver returned a malformed socket address")
                 values.add(ipaddress.ip_address(sockaddr[0]))
-            except ValueError as exc:
-                raise ResolutionError("resolver returned a malformed address") from exc
+        except (IndexError, TypeError, ValueError) as exc:
+            raise ResolutionError("resolver returned a malformed address") from exc
         if not values:
             raise ResolutionError(f"DNS returned no usable addresses for {host}") from None
         if len(values) > max_addresses:
