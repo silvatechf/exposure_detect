@@ -77,7 +77,7 @@ runs:
         echo "exit_code=$scan_exit_code" >> "$GITHUB_OUTPUT"
     - name: Upload SARIF
       if: ${{ inputs.upload-sarif == 'true' && always() && steps.scan.outputs.exit_code != '' && hashFiles(inputs.sarif-file) != '' }}
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       with:
         sarif_file: ${{ inputs.sarif-file }}
     - name: Fail on findings
