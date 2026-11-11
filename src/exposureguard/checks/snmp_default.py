@@ -22,7 +22,7 @@ class SnmpDefaultCommunityCheck(Check):
         findings = []
         for port in sorted(ctx.service_ports.get("snmp", set())):
             resp = await udp_exchange(
-                target.host, port, snmp.build_get_request(COMMUNITY), ctx.timeout
+                ctx.resolved_targets[target.host], port, snmp.build_get_request(COMMUNITY), ctx.timeout
             )
             if not resp:
                 continue  # no answer: closed or filtered, which is unknown, not safe
