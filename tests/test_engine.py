@@ -6,8 +6,8 @@ from exposureguard.checks import exposed_services
 from exposureguard.domain.models import Severity, Target
 from exposureguard.engine.base import ScanContext
 from exposureguard.engine.runner import run_scan
-from exposureguard.scope import ScopeError
 from exposureguard.networking.resolution import ResolvedTarget
+from exposureguard.scope import ScopeError
 
 
 async def _listen():
