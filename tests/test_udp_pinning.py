@@ -52,7 +52,7 @@ async def test_raw_tcp_protocol_exchange_uses_snapshot_ip_without_hostname_resol
         try:
             payload = await reader.read(128)
             assert payload.startswith(b"DESCRIBE rtsp://camera.lab.example/")
-            writer.write(b"RTSP/1.0 200 OK\\r\\nCSeq: 1\\r\\n\\r\\n")
+            writer.write(b"RTSP/1.0 200 OK\r\nCSeq: 1\r\n\r\n")
             await writer.drain()
             received.set()
         finally:
@@ -72,7 +72,7 @@ async def test_raw_tcp_protocol_exchange_uses_snapshot_ip_without_hostname_resol
         response = await exchange(
             ResolvedTarget("camera.lab.example", ("127.0.0.1",)),
             port,
-            b"DESCRIBE rtsp://camera.lab.example/ RTSP/1.0\\r\\nCSeq: 1\\r\\n\\r\\n",
+            b"DESCRIBE rtsp://camera.lab.example/ RTSP/1.0\r\nCSeq: 1\r\n\r\n",
             timeout=1.0,
         )
         assert response is not None and response.startswith(b"RTSP/1.0 200")
