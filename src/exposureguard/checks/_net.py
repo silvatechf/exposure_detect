@@ -64,10 +64,16 @@ async def udp_exchange(
             return None
         transport = None
         try:
-            transport, proto = await loop.create_datagram_endpoint(
-                _FirstDatagram, remote_addr=(address, port)
+            transport, proto = await asyncio.wait_for(
+                loop.create_datagram_endpoint(
+                    _FirstDatagram, remote_addr=(address, port)
+                ),
+                timeout=remaining,
             )
             transport.sendto(payload)
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                return None
             return await asyncio.wait_for(proto.future, remaining)
         except (OSError, TimeoutError):
             continue
