@@ -23,7 +23,7 @@ class MqttAnonymousCheck(Check):
     async def run(self, target: Target, ctx: ScanContext) -> list[Finding]:
         findings = []
         for port in _ports(ctx, target, "mqtt"):
-            resp = await exchange(target.host, port, _MQTT_CONNECT, ctx.timeout)
+            resp = await exchange(ctx.resolved_targets[target.host], port, _MQTT_CONNECT, ctx.timeout)
             if resp and len(resp) >= 4 and resp[0] == 0x20 and resp[3] == 0:
                 findings.append(
                     Finding(
@@ -49,7 +49,7 @@ class RedisUnauthenticatedCheck(Check):
     async def run(self, target: Target, ctx: ScanContext) -> list[Finding]:
         findings = []
         for port in _ports(ctx, target, "redis"):
-            resp = await exchange(target.host, port, b"PING\r\n", ctx.timeout)
+            resp = await exchange(ctx.resolved_targets[target.host], port, b"PING\r\n", ctx.timeout)
             if resp and resp.startswith(b"+PONG"):
                 findings.append(
                     Finding(
@@ -96,7 +96,7 @@ class RtspUnauthenticatedCheck(Check):
                     f"DESCRIBE rtsp://{url_host(target.host)}:{port}{path} RTSP/1.0\r\n"
                     "CSeq: 1\r\nAccept: application/sdp\r\n\r\n"
                 ).encode()
-                resp = await exchange(target.host, port, req, ctx.timeout)
+                resp = await exchange(ctx.resolved_targets[target.host], port, req, ctx.timeout)
                 if resp and resp.startswith(b"RTSP/1.0 200"):
                     open_paths.append(path)
             if open_paths:
