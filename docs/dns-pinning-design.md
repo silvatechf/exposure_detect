@@ -1,6 +1,6 @@
 # DNS Resolution and Connection Pinning Design
 
-**Status:** Implemented in PR #10; CI passed on Python 3.11/3.12; final review pending  
+**Status:** Implemented and integrated in `main` via [PR #10](https://github.com/silvatechf/exposure_detect/pull/10); CI passed on Python 3.11/3.12  
 **Security issue:** [#3 — pin DNS resolutions and enforce scope at connection time](https://github.com/silvatechf/exposure_detect/issues/3)
 
 ## Context
@@ -78,7 +78,7 @@ HTTPX retains the URL hostname so that Host and TLS SNI/certificate verification
 - Unit and local-server integration coverage includes DNS bounds, scope expiry/denials, complete preflight ordering, duplicate-host snapshot lifecycle, pinned TCP discovery, UDP destination pinning, HTTP Host preservation, HTTPS SNI/certificate validation, and hostname mismatch rejection.
 - Latest CI passed on Python 3.11 and 3.12: 124 tests per interpreter, Ruff, `pip-audit --skip-editable`, `pip check`, and GitGuardian.
 - The network-path audit found hostname resolution only in the dedicated resolver; connection creation is confined to the pinned networking primitives.
-- Final review remains pending; keep issue #3 open until the PR review and integration decision are complete.
+- PR #10 has been reviewed and integrated. Issue #3 is closed; the residual risk below remains applicable.
 
 ## Rollout
 
