@@ -101,3 +101,36 @@ def test_resolved_target_rejects_noncanonical_and_duplicate_addresses():
         ResolvedTarget("device.example", ("192.0.2.1", "192.0.2.1"))
     with pytest.raises(ValueError):
         ResolvedTarget("device.example", ("device.example",))
+
+
+async def test_ipv6_literal_bypasses_dns(monkeypatch):
+    loop = asyncio.get_running_loop()
+
+    async def forbidden(*args, **kwargs):
+        raise AssertionError("DNS must not be called for an IPv6 literal")
+
+    monkeypatch.setattr(loop, "getaddrinfo", forbidden)
+    result = await resolve_target("2001:db8::10")
+    assert result.addresses == ("2001:db8::10",)
+
+
+async def test_malformed_dns_socket_address_fails_closed(monkeypatch):
+    loop = asyncio.get_running_loop()
+
+    async def fake(*args, **kwargs):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ())]
+
+    monkeypatch.setattr(loop, "getaddrinfo", fake)
+    with pytest.raises(ResolutionError, match="malformed"):
+        await resolve_target("malformed.example")
+
+
+async def test_malformed_dns_record_fails_closed(monkeypatch):
+    loop = asyncio.get_running_loop()
+
+    async def fake(*args, **kwargs):
+        return [("incomplete",)]
+
+    monkeypatch.setattr(loop, "getaddrinfo", fake)
+    with pytest.raises(ResolutionError, match="malformed"):
+        await resolve_target("malformed.example")
