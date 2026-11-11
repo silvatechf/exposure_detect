@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      python-runtime:
+        patterns:
+          - "fastapi"
+          - "uvicorn"
+          - "pydantic"
+          - "sqlalchemy"
+          - "typer"
+          - "httpx"
+          - "httpcore"
+          - "pyyaml"
+          - "psycopg"
+      python-tooling:
+        dependency-type: "development"
+        patterns:
+          - "pytest*"
+          - "ruff"
+          - "pip-audit"
+          - "httpx2"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
