@@ -45,7 +45,7 @@ This tool interacts with networks. It is designed around explicit authorization 
 - **Industrial probes require a separate opt-in.** The Modbus check sends one read-only identification request; do not run it against live industrial equipment without specific approval.
 - **API access is disabled until keys are configured.** API identities have viewer/scanner/admin roles; privileged probes require admin authorization. Actions, including denied attempts, are audited.
 - **Input and resource limits are enforced.** Targets are hostnames or IP addresses, not URLs; unknown fields are rejected; API batches are capped at 16 targets and 256 explicit ports per target; TCP discovery fan-out is bounded.
-- **Web checks do not follow redirects to other hosts.** HTTP probes disable ambient proxy configuration (`trust_env=False`) to avoid silently rerouting scan traffic.
+- **Web checks constrain redirects.** The form-login probe follows redirects only within the exact same origin (scheme, hostname, and effective port); other web checks do not follow redirects. HTTP probes disable ambient proxy configuration (`trust_env=False`) to avoid silently rerouting scan traffic.
 - These controls reduce accidental misuse; they do not replace network segmentation, least-privilege deployment, controlled DNS, or egress filtering. Until issue [#3](https://github.com/silvatechf/exposure_detect/issues/3) is resolved, prefer IP/CIDR scope entries for sensitive environments.
 
 ## Quickstart
