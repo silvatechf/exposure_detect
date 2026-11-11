@@ -1,11 +1,13 @@
 import asyncio
 import socket
+import ssl
 
 import pytest
 
 from exposureguard.networking.resolution import (
     ResolutionError,
     ResolvedTarget,
+    open_pinned_connection,
     resolve_target,
 )
 
@@ -71,6 +73,27 @@ async def test_oversized_answer_fails_closed(monkeypatch):
     monkeypatch.setattr(loop, "getaddrinfo", fake)
     with pytest.raises(ResolutionError):
         await resolve_target("many.example", max_addresses=3)
+
+
+async def test_pinned_connection_uses_numeric_address_and_original_tls_name(monkeypatch):
+    from exposureguard.networking import resolution
+
+    observed = {}
+
+    async def fake_open_connection(host, port, **kwargs):
+        observed.update(host=host, port=port, **kwargs)
+        return object(), object()
+
+    monkeypatch.setattr(resolution.asyncio, "open_connection", fake_open_connection)
+    target = ResolvedTarget("camera.lab.example", ("192.0.2.10",))
+    context = ssl.create_default_context()
+
+    await open_pinned_connection(target, 443, 1.0, ssl_context=context)
+
+    assert observed["host"] == "192.0.2.10"
+    assert observed["port"] == 443
+    assert observed["ssl"] is context
+    assert observed["server_hostname"] == "camera.lab.example"
 
 
 def test_resolved_target_rejects_noncanonical_and_duplicate_addresses():
