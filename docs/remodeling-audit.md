@@ -1,4 +1,4 @@
-# ExposureGuard — v0.3.1 hardening review
+# ExposureDetect — v0.3.1 hardening review
 
 ## Scope
 

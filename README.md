@@ -135,7 +135,3 @@ The public project name and Python distribution are **ExposureDetect** (`exposur
 - The standards mapping is indicative; verify current standard text before citing it.
 - Rate limiting is per process. Docker Compose/PostgreSQL and the GitHub Action are not yet validated for production deployment.
 - ExposureDetect does not replace Nmap, Nuclei, EDR, or a dedicated vulnerability scanner. It focuses on exposure posture and secure-by-default evidence.
-
-## Relationship to DeviceTrust
-
-DeviceTrust manages known component vulnerabilities (SBOM → decision → VEX). ExposureDetect covers the complementary runtime layer: how a device is exposed and configured. A future integration may attach ExposureDetect findings as evidence in a DeviceTrust decision.
