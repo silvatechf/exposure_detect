@@ -10,8 +10,8 @@ from exposureguard.domain.controls import standards_for
 from exposureguard.domain.models import ScanResult, Target
 from exposureguard.engine.base import ScanContext
 from exposureguard.engine.registry import all_checks
-from exposureguard.scope import Scope
 from exposureguard.networking.resolution import resolve_target
+from exposureguard.scope import Scope
 
 
 def _opted_in(check, ctx: ScanContext) -> bool:
