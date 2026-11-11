@@ -102,6 +102,16 @@ async def test_https_transport_preserves_original_sni_and_certificate_hostname()
             response = await client.get(f"https://camera.lab.example:{port}/")
         assert response.status_code == 200
         assert observed_sni == ["camera.lab.example"]
+
+        async with pinned_client(
+            "wrong.lab.example",
+            ("127.0.0.1",),
+            timeout=2.0,
+            verify=client_context,
+        ) as client:
+            with pytest.raises(httpx.NetworkError):
+                await client.get(f"https://wrong.lab.example:{port}/")
+        assert observed_sni == ["camera.lab.example", "wrong.lab.example"]
     finally:
         server.close()
         await server.wait_closed()
