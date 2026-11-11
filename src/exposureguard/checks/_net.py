@@ -52,16 +52,17 @@ class _FirstDatagram(asyncio.DatagramProtocol):
 
 async def udp_exchange(target: ResolvedTarget, port: int, payload: bytes, timeout: float) -> bytes | None:
     loop = asyncio.get_running_loop()
-    try:
-        transport, proto = await loop.create_datagram_endpoint(
-            _FirstDatagram, remote_addr=(target.addresses[0], port)
-        )
-    except OSError:
-        return None
-    try:
-        transport.sendto(payload)
-        return await asyncio.wait_for(proto.future, timeout)
-    except (OSError, TimeoutError):
-        return None
-    finally:
-        transport.close()
+    for address in target.addresses:
+        transport = None
+        try:
+            transport, proto = await loop.create_datagram_endpoint(
+                _FirstDatagram, remote_addr=(address, port)
+            )
+            transport.sendto(payload)
+            return await asyncio.wait_for(proto.future, timeout)
+        except (OSError, TimeoutError):
+            continue
+        finally:
+            if transport is not None:
+                transport.close()
+    return None
