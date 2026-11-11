@@ -11,6 +11,7 @@ from exposureguard.checks.http_form_login import _get_same_host
 from exposureguard.domain.models import Finding, Severity, Target
 from exposureguard.engine.base import Check, ScanContext
 from exposureguard.engine.registry import register
+from exposureguard.networking.http import pinned_client
 
 _SOAP = (
     '<?xml version="1.0"?><s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope">'
@@ -34,9 +35,11 @@ class OnvifCheck(Check):
     async def run(self, target: Target, ctx: ScanContext) -> list[Finding]:
         findings: list[Finding] = []
         headers = {"Content-Type": "application/soap+xml"}
-        async with httpx.AsyncClient(
-            trust_env=False,
-            verify=False, timeout=ctx.timeout, follow_redirects=False  # noqa: S501
+        async with pinned_client(
+            target.host,
+            ctx.resolved_targets[target.host].addresses,
+            timeout=ctx.timeout,
+            verify=False,
         ) as client:
             for port in _web_ports(ctx, target):
                 scheme = "https" if port in ctx.https_ports else "http"
@@ -89,9 +92,11 @@ class CameraFingerprintCheck(Check):
 
     async def run(self, target: Target, ctx: ScanContext) -> list[Finding]:
         findings: list[Finding] = []
-        async with httpx.AsyncClient(
-            trust_env=False,
-            verify=False, timeout=ctx.timeout, follow_redirects=False  # noqa: S501
+        async with pinned_client(
+            target.host,
+            ctx.resolved_targets[target.host].addresses,
+            timeout=ctx.timeout,
+            verify=False,
         ) as client:
             for port in _web_ports(ctx, target):
                 scheme = "https" if port in ctx.https_ports else "http"
