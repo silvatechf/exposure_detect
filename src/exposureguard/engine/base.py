@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import ClassVar
 
 from exposureguard.domain.models import Finding, Target
+from exposureguard.networking.resolution import ResolvedTarget
 from exposureguard.profiles import Profile
 
 
@@ -25,6 +26,7 @@ class ScanContext:
         default_factory=lambda: {"mqtt": {1883}, "redis": {6379}, "rtsp": {554}, "snmp": {161}, "modbus": {502}}
     )
     open_ports: dict[str, set[int]] = field(default_factory=dict)
+    resolved_targets: dict[str, ResolvedTarget] = field(default_factory=dict)
     network_semaphore: asyncio.Semaphore = field(
         default_factory=lambda: asyncio.Semaphore(64), repr=False
     )
