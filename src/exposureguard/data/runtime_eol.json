@@ -1,0 +1,10 @@
+{
+  "_note": "End of security support dates, curated by hand. Verify at https://www.php.net/supported-versions.php before relying on them. Distribution packages may backport fixes, so findings carry medium confidence.",
+  "php": {
+    "7.4": "2022-11-28",
+    "8.0": "2023-11-26",
+    "8.1": "2025-12-31",
+    "8.2": "2026-12-31",
+    "8.3": "2027-12-31"
+  }
+}

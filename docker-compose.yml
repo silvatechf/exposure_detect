@@ -1,0 +1,25 @@
+# API + PostgreSQL. Not exercised in the original test environment: validate before production use.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: exposureguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: exposureguard
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U exposureguard"]
+      interval: 5s
+      retries: 10
+  api:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      EG_API_KEYS: ${EG_API_KEYS:?set EG_API_KEYS as name:role:key,...}
+      EG_SCOPE_FILE: /config/scope.yaml
+      EG_DATABASE_URL: postgresql+psycopg://exposureguard:${POSTGRES_PASSWORD}@db:5432/exposureguard
+    volumes: ["./scope.yaml:/config/scope.yaml:ro"]
+    ports: ["127.0.0.1:8000:8000"]
+volumes:
+  pgdata:

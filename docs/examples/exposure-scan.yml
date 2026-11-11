@@ -1,0 +1,22 @@
+# Copy to .github/workflows/exposure-scan.yml in the repo that owns the lab/staging devices.
+# IMPORTANT: GitHub-hosted runners cannot reach private lab networks. Use a self-hosted runner
+# inside the network that contains the devices (or scan only internet-facing staging hosts you own).
+name: exposure-scan
+on:
+  schedule: [{ cron: "0 5 * * 1" }]   # weekly
+  workflow_dispatch:
+permissions:
+  contents: read
+  security-events: write              # required to upload SARIF
+jobs:
+  scan:
+    runs-on: [self-hosted, lab]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./                        # or: your-org/exposureguard@v0.2.0
+        with:
+          targets: "192.0.2.10,192.0.2.11"
+          scope-file: scope.yaml
+          fail-on: high
+          allow-credential-checks: "true"
+          baseline-file: baseline/exposureguard.json   # optional: only new findings fail the job

@@ -1,0 +1,10 @@
+# Scope file: you may only scan what is listed here. Copy to scope.yaml and edit.
+owner: "Acme Industrial"
+authorized_by: "Name Surname, Head of Product Security"
+valid_until: "2026-12-31"
+allowed:
+  - 192.0.2.0/24        # CIDR ranges
+  - gateway.lab.example.com
+  - "*.lab.example.com" # wildcard suffix
+denied:
+  - 192.0.2.254
