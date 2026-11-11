@@ -147,7 +147,7 @@ class HttpFormLoginCheck(Check):
                 if form is None:
                     continue
                 action = urljoin(str(page.url), form["action"])
-                if urlparse(action).hostname != target.host:
+                if _origin(action) != _origin(str(page.url)):
                     continue
 
                 async def attempt(user: str, pw: str, _form=form, _action=action) -> bool:
