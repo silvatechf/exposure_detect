@@ -9,6 +9,7 @@ from importlib import resources
 from exposureguard.domain.models import Finding, Severity, Target
 from exposureguard.engine.base import Check, ScanContext
 from exposureguard.engine.registry import register
+from exposureguard.networking.resolution import ResolvedTarget, open_pinned_connection
 
 RISKY: dict[str, dict[str, str]] = json.loads(
     resources.files("exposureguard.data").joinpath("risky_services.json").read_text()
@@ -17,11 +18,11 @@ DEFAULT_PORTS = sorted({int(p) for p in RISKY} | {22, 80, 443, 8080, 8443, 8883}
 
 
 async def _is_open(
-    host: str, port: int, timeout: float, semaphore: asyncio.Semaphore
+    target: ResolvedTarget, port: int, timeout: float, semaphore: asyncio.Semaphore
 ) -> bool:
     async with semaphore:
         try:
-            _, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout)
+            _, writer = await open_pinned_connection(target, port, timeout)
         except (OSError, TimeoutError):
             return False
         writer.close()
@@ -40,8 +41,9 @@ class ExposedServicesCheck(Check):
 
     async def run(self, target: Target, ctx: ScanContext) -> list[Finding]:
         ports = target.ports or DEFAULT_PORTS
+        resolved = ctx.resolved_targets[target.host]
         results = await asyncio.gather(
-            *(_is_open(target.host, p, ctx.timeout, ctx.network_semaphore) for p in ports)
+            *(_is_open(resolved, p, ctx.timeout, ctx.network_semaphore) for p in ports)
         )
         open_ports = {p for p, ok in zip(ports, results, strict=True) if ok}
         ctx.open_ports[target.host] = open_ports
