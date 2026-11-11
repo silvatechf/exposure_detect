@@ -1,6 +1,6 @@
-# hhreat model (of the tool itself)
+# Threat model (of the tool itself)
 
-| hhreat | Mitigation |
+| Threat | Mitigation |
 | --- | --- |
 | Tool used against unauthorised systems | Mandatory scope file, expiring scope, deny list, fail-closed |
 | Account lockout on target devices | Default-credential check is opt-in, tiny list, hard cap on attempts, delay between attempts |
