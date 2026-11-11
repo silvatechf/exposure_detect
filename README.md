@@ -39,7 +39,7 @@ Outputs include a posture score (0–100, grade A–F), Markdown/JSON/SARIF repo
 
 This tool interacts with networks. It is designed around explicit authorization and conservative defaults:
 
-- **Explicit scope is mandatory.** Target hostnames/IPs are checked against a schema-validated, optionally expiring scope before scanning. DNS A/AAAA answers are snapshotted once per scan, explicit denied addresses fail closed, and TCP/UDP/HTTP/TLS transports connect only to pinned numeric addresses. The implementation is under final review in [PR #10](https://github.com/silvatechf/exposure_detect/pull/10); see [security issue #3](https://github.com/silvatechf/exposure_detect/issues/3).
+- **Explicit scope is mandatory.** Target hostnames/IPs are checked against a schema-validated, optionally expiring scope before scanning. DNS A/AAAA answers are snapshotted once per scan, explicit denied addresses fail closed, and TCP/UDP/HTTP/TLS transports connect only to pinned numeric addresses. This connection-time boundary is implemented and integrated in [PR #10](https://github.com/silvatechf/exposure_detect/pull/10).
 - **Only scan assets you own or are explicitly authorized to assess.** The scope file is a technical boundary, not a substitute for legal authorization.
 - **Credential checks are opt-in.** They use a deliberately tiny set of generic defaults, cap attempts per endpoint, and never store passwords.
 - **Industrial probes require a separate opt-in.** The Modbus check sends one read-only identification request; do not run it against live industrial equipment without specific approval.
@@ -133,5 +133,5 @@ The public project name and Python distribution are **ExposureDetect** (`exposur
 - Device profiles are starting points and need tuning for each environment.
 - End-to-end validation has used bundled fake devices, **not real IoT or industrial hardware**.
 - The standards mapping is indicative; verify current standard text before citing it.
-- DNS pinning is implemented in the current feature branch and is undergoing final CI/review; it does not validate the trustworthiness of authoritative DNS answers received during preflight. Rate limiting is per process. Docker Compose/PostgreSQL and the GitHub Action are not yet validated for production deployment.
+- DNS pinning is implemented in `main`; it does not validate the trustworthiness of authoritative DNS answers received during preflight. Rate limiting is per process. Docker Compose/PostgreSQL and the GitHub Action are not yet validated for production deployment.
 - ExposureDetect does not replace Nmap, Nuclei, EDR, or a dedicated vulnerability scanner. It focuses on exposure posture and secure-by-default evidence.
