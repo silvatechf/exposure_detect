@@ -4,7 +4,7 @@
 
 ExposureDetect helps identify and document externally observable security exposure across explicitly scoped IoT devices, industrial gateways, cameras, and embedded web interfaces.
 
-> **Project status:** active prototype, version 0.3.2. Automated tests cover the bundled local lab and the SQLAlchemy repository against PostgreSQL 16 on Python 3.11/3.12. Full Docker Compose deployment, real hardware, and a caller workflow exercising SARIF upload still require independent validation.
+> **Project status:** active prototype, version 0.3.2. Automated tests cover the bundled local lab and the SQLAlchemy repository against PostgreSQL 16 on Python 3.11/3.12. CI also builds and runs the Docker Compose API/PostgreSQL stack, verifies persistence across an API restart, and smoke-tests composite-action SARIF generation. Windows/Docker Desktop validation, real hardware, and actual Code Scanning upload from a caller workflow remain pending.
 
 It answers one practical question:
 
@@ -85,7 +85,7 @@ exposuredetect scan -t 192.0.2.10 --format sarif -o out.sarif --baseline baselin
 exposuredetect diff baseline.json current.json
 ```
 
-The GitHub Action is defined in `action.yml`. Use a self-hosted runner inside the lab network; GitHub-hosted runners cannot reach private devices. A caller workflow that uploads SARIF must grant `contents: read` and `security-events: write`. The action definition and SARIF upload path still require validation in a real repository workflow.
+The GitHub Action is defined in `action.yml`. Use a self-hosted runner inside the lab network; GitHub-hosted runners cannot reach private devices. A caller workflow that uploads SARIF must grant `contents: read` and `security-events: write`. The composite action and SARIF generation are smoke-tested in CI; actual Code Scanning upload still requires validation in a caller workflow with the required permissions.
 
 ### Docker Compose (API + PostgreSQL)
 
