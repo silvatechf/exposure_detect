@@ -110,3 +110,30 @@ async def test_every_target_is_preflighted_before_first_probe(scope, monkeypatch
         scope,
     )
     assert probes_started is True
+
+
+async def test_hostname_service_discovery_uses_preflight_snapshot(scope, monkeypatch):
+    from exposureguard.engine import runner
+
+    server, port = await _listen()
+    scope.allowed = ["*.lab.example.com"]
+    monkeypatch.setitem(
+        exposed_services.RISKY,
+        str(port),
+        {"name": "PinnedTestService", "severity": "HIGH", "why": "w", "fix": "f"},
+    )
+
+    async def fake_resolve(host, timeout):
+        return ResolvedTarget(host=host, addresses=("127.0.0.1",))
+
+    monkeypatch.setattr(runner, "resolve_target", fake_resolve)
+    try:
+        async with server:
+            result = await run_scan(
+                [Target(host="gateway.lab.example.com", ports=[port])],
+                scope,
+            )
+        assert any(f.port == port and f.host == "gateway.lab.example.com" for f in result.findings)
+    finally:
+        server.close()
+        await server.wait_closed()
