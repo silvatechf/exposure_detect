@@ -7,7 +7,7 @@
 - [x] Exercise the SQLAlchemy repository against PostgreSQL 16 in CI on Python 3.11, 3.12, and 3.15 (PRs #12 and #20).
 - [x] Run the Docker Compose API + PostgreSQL stack in CI, including scan/audit persistence across an API restart (PR #13).
 - [x] Add container hardening and a composite-action SARIF-generation smoke test (PRs #12–13).
-- Validate the Compose workflow on the user's Windows/Docker Desktop environment.
+- [x] Validate the Compose workflow on Windows/Docker Desktop: API/PostgreSQL startup and health, scoped `127.0.0.1` scan, audit events, and scan/audit persistence after an API restart (manual validation, 2026-11-11).
 - Validate SARIF upload to GitHub Code Scanning from a real caller workflow with `security-events: write`.
 - Exercise the scanner against an isolated hardware lab (router, IP camera, and PLC simulator).
 - Record reproducible false-positive cases and add sanitized fixtures from authorized test devices.
