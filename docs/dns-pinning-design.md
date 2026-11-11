@@ -1,6 +1,6 @@
 # DNS Resolution and Connection Pinning Design
 
-**Status:** Proposed for v0.4; implementation not yet complete  
+**Status:** Partially implemented in PR #9; security acceptance tests and final review remain open  
 **Security issue:** [#3 — pin DNS resolutions and enforce scope at connection time](https://github.com/silvatechf/exposure_detect/issues/3)
 
 ## Context
@@ -37,14 +37,14 @@ This is a time-of-check/time-of-use gap. Scope validation must govern the actual
 
 ### HTTPX
 
-HTTPX must retain the URL hostname so that Host and TLS SNI/certificate verification remain correct. Replacing the URL hostname with an IP and manually setting Host is insufficient because it changes TLS SNI and certificate-name validation.
+HTTPX retains the URL hostname so that Host and TLS SNI/certificate verification remain correct. Replacing the URL hostname with an IP and manually setting Host is insufficient because it changes TLS SNI and certificate-name validation. PR #9 implements a dedicated HTTPX async transport backed by the public HTTP Core network backend API. The backend verifies the requested origin host and connects only to numeric addresses from the immutable snapshot. HTTP Core continues to own HTTP framing, Host, TLS SNI, certificate verification, and response handling. The transport uses no proxy, disables keep-alive pooling, and maps HTTP Core network/protocol/timeout failures to HTTPX network errors.
 
 The preferred integration is a dedicated HTTPX async transport backed by an explicit HTTP Core network backend. The backend receives the origin hostname from HTTP Core and substitutes only the socket destination with a validated address from the scan snapshot. HTTP Core continues to own HTTP framing, Host, TLS SNI, certificate verification, connection pooling, and response handling.
 
-- Declare and pin the supported HTTP Core API range as a direct dependency if the adapter uses it directly.
-- Keep proxy support disabled for scan traffic.
-- Do not mutate HTTPX private attributes or monkeypatch global socket/DNS functions.
-- If a stable public transport extension cannot be achieved for the supported dependency range, evaluate a single HTTP client with a documented custom resolver rather than shipping a fragile private-API adapter.
+- HTTP Core is declared as a direct dependency (`httpcore>=1.0,<2.0`) because the adapter uses its public async transport/backend interfaces.
+- Proxy support is disabled for scan traffic; the transport uses a direct connection pool.
+- The adapter does not mutate HTTPX private attributes or monkeypatch global socket/DNS functions.
+- The integration is implemented in `exposureguard.networking.http`; all HTTPX-backed checks use the scan snapshot.
 
 ## Scope semantics
 
@@ -76,9 +76,9 @@ The preferred integration is a dedicated HTTPX async transport backed by an expl
 
 ### Regression and CI
 
-- Run the complete suite on Python 3.11 and 3.12.
-- Run Ruff, `pip-audit --skip-editable`, and `pip check`.
-- Add an integration test proving that no network check can bypass the pinned connector.
+- Unit coverage now checks hostname resolution bypass in the HTTP transport, origin-host mismatch rejection, DNS-deny preflight, complete multi-target preflight, and scope expiry.
+- The complete Python 3.11/3.12 CI run is still being validated after the HTTP transport migration.
+- Remaining acceptance work includes explicit HTTPS Host/SNI/certificate tests, UDP no-re-resolution coverage, and an end-to-end audit of every network path.
 - Update README, architecture, threat model, and roadmap only after the end-to-end tests pass.
 
 ## Rollout
