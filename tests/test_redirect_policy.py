@@ -24,6 +24,7 @@ def test_origin_normalizes_default_ports_and_ipv6(url, expected):
         "http://user:pass@device.example/",
         "http://device.example:not-a-port/",
         "http:///missing-host/",
+        "http://[invalid-ipv6/",
     ],
 )
 def test_origin_rejects_unsafe_or_malformed_urls(url):
