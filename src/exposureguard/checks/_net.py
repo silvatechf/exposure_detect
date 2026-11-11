@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 
+from exposureguard.networking.resolution import ResolvedTarget, open_pinned_connection
+
 
 def url_host(host: str) -> str:
     """Return a host literal safe for use in an HTTP/RTSP URL authority."""
@@ -15,10 +17,10 @@ def url_host(host: str) -> str:
     return f"[{host}]" if address.version == 6 else host
 
 
-async def exchange(host: str, port: int, payload: bytes, timeout: float, nbytes: int = 512) -> bytes | None:
+async def exchange(target: ResolvedTarget, port: int, payload: bytes, timeout: float, nbytes: int = 512) -> bytes | None:
     """Open a TCP connection, send payload, return the first bytes read (None on any failure)."""
     try:
-        reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout)
+        reader, writer = await open_pinned_connection(target, port, timeout)
     except (OSError, TimeoutError):
         return None
     try:
@@ -48,11 +50,11 @@ class _FirstDatagram(asyncio.DatagramProtocol):
             self.future.set_exception(exc)
 
 
-async def udp_exchange(host: str, port: int, payload: bytes, timeout: float) -> bytes | None:
+async def udp_exchange(target: ResolvedTarget, port: int, payload: bytes, timeout: float) -> bytes | None:
     loop = asyncio.get_running_loop()
     try:
         transport, proto = await loop.create_datagram_endpoint(
-            _FirstDatagram, remote_addr=(host, port)
+            _FirstDatagram, remote_addr=(target.addresses[0], port)
         )
     except OSError:
         return None
