@@ -19,13 +19,12 @@
 | Fragile cameras overloaded by probing | RTSP/ONVIF/path probes run sequentially, short timeouts, bounded path lists |
 | Supply chain | Minimal dependencies, `pip-audit` in CI, non-root container |
 
-## Known security gap: DNS rebinding
+## DNS rebinding / destination pinning
 
-DNS pinning/rebinding protection is **not implemented**. Domain scopes currently authorize the supplied hostname, while TCP, UDP, HTTP, RTSP, and TLS clients may resolve that hostname independently at connection time. A DNS change between authorization and connection can therefore bypass the intended address boundary.
+The implementation in [PR #10](https://github.com/silvatechf/exposure_detect/pull/10) adds a bounded, immutable A/AAAA snapshot per target hostname and per scan. The runner validates every target and resolves all unique hostnames before any probe begins. Explicitly denied IP/CIDR answers reject the complete target, including mixed allow/deny answer sets.
 
-Until [issue #3](https://github.com/silvatechf/exposure_detect/issues/3) is implemented and covered by connection-level integration tests:
-- Prefer IP/CIDR entries in scope for sensitive environments.
-- Use controlled DNS and restrictive outbound firewall rules.
-- Do not treat hostname scope as sufficient protection against DNS rebinding.
+TCP service discovery, raw TCP protocols, UDP/SNMP, TLS, and HTTPX-backed checks use only numeric addresses from the snapshot. HTTP Host, TLS SNI, and certificate hostname validation retain the original hostname. Proxies and hostname fallback are disabled. The implementation remains under final CI and security review; [issue #3](https://github.com/silvatechf/exposure_detect/issues/3) stays open until that validation is complete.
+
+Residual risk: pinning prevents DNS changes after preflight from changing the connection destination. It does not establish that the authoritative DNS answer received during preflight is trustworthy. Use controlled DNS and restrictive outbound firewall rules, especially for sensitive environments.
 
 Other deferred controls include distributed rate limiting, encrypted database storage, SSO/OIDC, and tamper-evident audit logging.
