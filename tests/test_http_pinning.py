@@ -58,16 +58,40 @@ async def test_http_transport_rejects_origin_outside_snapshot():
             await client.get("http://other.lab.example/")
 
 
-async def test_https_transport_preserves_original_sni_and_certificate_hostname():
+async def test_https_transport_preserves_original_sni_and_certificate_hostname(tmp_path):
+    import shutil
     import ssl
-    from pathlib import Path
+    import subprocess
 
-    fixture_dir = Path(__file__).parent / "fixtures" / "tls"
-    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    server_context.load_cert_chain(
-        certfile=fixture_dir / "server.crt",
-        keyfile=fixture_dir / "server.key",
+    openssl = shutil.which("openssl")
+    if openssl is None:
+        pytest.skip("OpenSSL executable is required for the local TLS fixture")
+    certificate = tmp_path / "server.crt"
+    private_key = tmp_path / "server.key"
+    subprocess.run(  # noqa: S603
+        [
+            openssl,
+            "req",
+            "-x509",
+            "-newkey",
+            "rsa:2048",
+            "-nodes",
+            "-keyout",
+            str(private_key),
+            "-out",
+            str(certificate),
+            "-days",
+            "2",
+            "-subj",
+            "/CN=camera.lab.example",
+            "-addext",
+            "subjectAltName=DNS:camera.lab.example",
+        ],
+        check=True,
+        capture_output=True,
     )
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.load_cert_chain(certfile=certificate, keyfile=private_key)
     observed_sni = []
 
     def capture_sni(ssl_object, server_name, initial_context):
@@ -91,7 +115,7 @@ async def test_https_transport_preserves_original_sni_and_certificate_hostname()
         handle, "127.0.0.1", 0, ssl=server_context
     )
     port = server.sockets[0].getsockname()[1]
-    client_context = ssl.create_default_context(cafile=str(fixture_dir / "server.crt"))
+    client_context = ssl.create_default_context(cafile=str(certificate))
     try:
         async with pinned_client(
             "camera.lab.example",
