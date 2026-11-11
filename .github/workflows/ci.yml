@@ -47,3 +47,101 @@ jobs:
         run: pip-audit --skip-editable
       - name: Check dependency consistency
         run: python -m pip check
+
+  compose-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and exercise API + PostgreSQL with Docker Compose
+        shell: bash
+        run: |
+          set -euo pipefail
+          postgres_password="$(openssl rand -hex 32)"
+          api_key="$(openssl rand -hex 32)"
+          echo "::add-mask::$api_key"
+          cat > .env <<EOF
+          POSTGRES_PASSWORD=$postgres_password
+          EG_API_KEYS=ci:admin:$api_key
+          EOF
+          cat > scope.yaml <<'EOF'
+          owner: "CI integration test"
+          authorized_by: "CI"
+          allowed:
+            - 127.0.0.1
+          EOF
+
+          docker compose config --quiet
+          docker compose up --build --detach
+
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:8000/healthz >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8000/healthz >/dev/null
+
+          curl --fail --silent \
+            -H "X-API-Key: $api_key" \
+            -H "Content-Type: application/json" \
+            -d '{"targets":[{"host":"127.0.0.1","ports":[1]}]}' \
+            http://127.0.0.1:8000/scans > scan.json
+          scan_id="$(python -c "import json; print(json.load(open('scan.json'))['id'])")"
+
+          # Restarting the API must not lose scans or audit events stored in PostgreSQL.
+          docker compose restart api
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/healthz >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl --fail --silent -H "X-API-Key: $api_key" \
+            http://127.0.0.1:8000/scans > scans.json
+          curl --fail --silent -H "X-API-Key: $api_key" \
+            http://127.0.0.1:8000/audit > audit.json
+          python - "$scan_id" <<'PY'
+          import json
+          import sys
+
+          scan_id = sys.argv[1]
+          scans = json.load(open("scans.json", encoding="utf-8"))
+          audit = json.load(open("audit.json", encoding="utf-8"))
+          assert any(scan["id"] == scan_id for scan in scans), "scan did not persist across API restart"
+          assert any(event["action"] == "scan.create" for event in audit), "audit event was not persisted"
+          print("Compose API/PostgreSQL persistence check passed")
+          PY
+      - name: Collect Compose logs
+        if: always()
+        run: docker compose logs --no-color || true
+      - name: Stop Compose stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans
+
+  action-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ExposureDetect composite action
+        uses: ./
+        with:
+          targets: "192.0.2.10"
+          scope-file: scope.example.yaml
+          fail-on: critical
+          sarif-file: smoke.sarif
+          upload-sarif: "false"
+      - name: Validate generated SARIF
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("smoke.sarif").read_text(encoding="utf-8"))
+          assert report["version"] == "2.1.0"
+          assert isinstance(report["runs"], list) and report["runs"]
+          print("Composite action SARIF smoke test passed")
+          PY
