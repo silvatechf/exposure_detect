@@ -4,7 +4,7 @@
 
 ExposureDetect helps identify and document externally observable security exposure across explicitly scoped IoT devices, industrial gateways, cameras, and embedded web interfaces.
 
-> **Project status:** active prototype, version 0.3.2. Automated tests cover the bundled local lab; real hardware, Docker Compose, PostgreSQL deployment, and the GitHub Action still require independent validation.
+> **Project status:** active prototype, version 0.3.2. Automated tests cover the bundled local lab and the SQLAlchemy repository against PostgreSQL 16 on Python 3.11/3.12. Full Docker Compose deployment, real hardware, and a caller workflow exercising SARIF upload still require independent validation.
 
 It answers one practical question:
 
@@ -151,5 +151,5 @@ The public project name and Python distribution are **ExposureDetect** (`exposur
 - Device profiles are starting points and need tuning for each environment.
 - End-to-end validation has used bundled fake devices, **not real IoT or industrial hardware**.
 - The standards mapping is indicative; verify current standard text before citing it.
-- DNS pinning is implemented in `main`; it does not validate the trustworthiness of authoritative DNS answers received during preflight. Rate limiting is per process. Docker Compose/PostgreSQL and the GitHub Action have local configuration hardening, but still require execution in a real deployment workflow before production use.
+- DNS pinning is implemented in `main`; it does not validate the trustworthiness of authoritative DNS answers received during preflight. Rate limiting is per process. PostgreSQL repository round-trips are covered in CI, but the full Compose deployment and a real GitHub Action/SARIF caller workflow have not yet been exercised. SQLAlchemy `create_all` bootstraps missing tables; there is no schema migration system yet.
 - ExposureDetect does not replace Nmap, Nuclei, EDR, or a dedicated vulnerability scanner. It focuses on exposure posture and secure-by-default evidence.
