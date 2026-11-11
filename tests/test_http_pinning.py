@@ -77,10 +77,10 @@ async def test_https_transport_preserves_original_sni_and_certificate_hostname()
 
     async def handle(reader, writer):
         try:
-            await reader.readuntil(b"\\r\\n\\r\\n")
+            await reader.readuntil(b"\r\n\r\n")
             writer.write(
-                b"HTTP/1.1 200 OK\\r\\nContent-Length: 2\\r\\n"
-                b"Connection: close\\r\\n\\r\\nok"
+                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n"
+                b"Connection: close\r\n\r\nok"
             )
             await writer.drain()
         finally:
