@@ -137,3 +137,42 @@ async def test_hostname_service_discovery_uses_preflight_snapshot(scope, monkeyp
     finally:
         server.close()
         await server.wait_closed()
+
+
+async def test_dns_snapshot_is_deduplicated_within_scan_and_not_reused_across_scans(
+    scope, monkeypatch
+):
+    from exposureguard.engine import runner
+
+    scope.allowed = ["*.lab.example.com"]
+    calls = 0
+
+    class Probe(Check):
+        id = "probe"
+        title = "probe"
+        depends_on_ports = False
+
+        async def run(self, target, ctx):
+            return []
+
+    async def fake_resolve(host, timeout):
+        nonlocal calls
+        calls += 1
+        address = "192.0.2.10" if calls == 1 else "192.0.2.11"
+        return ResolvedTarget(host=host, addresses=(address,))
+
+    monkeypatch.setattr(runner, "resolve_target", fake_resolve)
+    monkeypatch.setattr(runner, "all_checks", lambda: {"probe": Probe})
+    ctx = ScanContext()
+    targets = [
+        Target(host="gateway.lab.example.com"),
+        Target(host="gateway.lab.example.com"),
+    ]
+
+    await run_scan(targets, scope, ctx)
+    assert calls == 1
+    assert ctx.resolved_targets["gateway.lab.example.com"].addresses == ("192.0.2.10",)
+
+    await run_scan(targets, scope, ctx)
+    assert calls == 2
+    assert ctx.resolved_targets["gateway.lab.example.com"].addresses == ("192.0.2.11",)
